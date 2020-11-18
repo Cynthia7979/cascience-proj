@@ -54,3 +54,5 @@ class Net(nn.Module):
 
 network = Net()
 optimizer = optim.SGD(network.parameters(), lr=lrate, momentum=momentum)
+
+train
