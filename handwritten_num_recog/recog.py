@@ -16,7 +16,7 @@ torch.backends.cudnn.endabled = False
 torch.manual_seed(random_sd)
 
 train_loader = torch.utils.data.DataLoader(
-    torchvision.datasets.MNIST('/files/', train=True, download=True,
+    torchvision.datasets.MNIST('./files/', train=True, download=True,
                                 transform=torchvision.transforms.Compose([
                                     torchvision.transforms.ToTensor(),
                                     torchvision.transforms.Normalize(
@@ -24,13 +24,14 @@ train_loader = torch.utils.data.DataLoader(
                                 ])),
     batch_size=batch_size_train, shuffle=True)
 test_loader = torch.utils.data.DataLoader(
-	torchvision.datasets.MNIST('/files/', train=False, download=True,
+	torchvision.datasets.MNIST('./files/', train=False, download=True,
 								transform=torchvision.transforms.Compose([
 									torchvision.transforms.ToTensor(),
 									torchvision.transforms.Normalize(
 										(0.1307,), (0.3081,))
 								])),
 	batch_size=batch_size_test, shuffle=True)
+
 examples = enumerate(test_loader)
 batch_idx, (example_data, example_targets) = next(examples)
 
@@ -44,13 +45,13 @@ class Net(nn.Module):
 		self.fc2 = nn.Linear(50, 10)
 
 	def forward(self, x):
-		x = F.relu(F.max_pool2d(self.conv1(x), 2))
-		x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
+		x = nn_F.relu(nn_F.max_pool2d(self.conv1(x), 2))
+		x = nn_F.relu(nn_F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
 		x = x.view(-1, 320)
-		x = F.relu(self.fc1(x))
-		x = F.dropout(x, training=self.training)
+		x = nn_F.relu(self.fc1(x))
+		x = nn_F.dropout(x, training=self.training)
 		x = self.fc2(x)
-		return F.log_softmax(x)
+		return nn_F.log_softmax(x)
 
 network = Net()
 optimizer = optim.SGD(network.parameters(), lr=lrate, momentum=momentum)
@@ -65,7 +66,7 @@ def train(epoch):
 	for batch_idx, (data, target) in enumerate(train_loader):
 		optimizer.zero_grad()
 		output = network(data)
-		loss = F.nll_loss(output, target)
+		loss = nn_F.nll_loss(output, target)
 		loss.backward()
 		optimizer.step()
 		if batch_idx % log_interval == 0:
@@ -77,8 +78,8 @@ def train(epoch):
 			train_losses.append(loss.item())
 			train_counter.append(
 				(batch_idx*64) + ((epoch-1)*len(train_loader.dataset)))
-			torch.save(network.state_dict(), '/results/model.pth')
-			torch.save(optimizer.state_dict(), '/results/optimizer.pth')
+			torch.save(network.state_dict(), './results/model.pth')
+			torch.save(optimizer.state_dict(), './results/optimizer.pth')
 
 
 def test():
@@ -88,7 +89,7 @@ def test():
 	with torch.no_grad():
 		for data, target in test_loader:
 			output = network(data)
-			test_loss += F.nll_loss(output, target, size_average=False).item()
+			test_loss += nn_F.nll_loss(output, target, size_average=False).item()
 			pred = output.data.max(1, keepdim=True)[1]
 			correct += pred.eq(target.data.view_as(pred)).sum()
 	test_loss /= len(test_loader.dataset)
